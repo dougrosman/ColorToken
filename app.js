@@ -2,7 +2,7 @@ ethereum.autoRefreshOnNetworkChange = false;
 ethereum.enable();
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-const signer = provider.getSigner();
+let signer = provider.getSigner();
 const contractAddress = "0x8F2580E00De52Dc409651B14268FAf3ca917D1a5";
 const contractABI = [
   "function awardItem(address player, uint256 tokenId) public",
@@ -13,13 +13,15 @@ const contractABI = [
   "function safeTransferFrom(address from, address to, uint256 tokenId) public"
 ];
 
-let address;
+let address; // address of the person logged in
 let totalSupply;
 let existingTokens = [];
 let signerTokens = [];
 
 const contract = new ethers.Contract(contractAddress, contractABI, provider);
 const tokenWithSigner = contract.connect(signer);
+
+
 
 main();
 
@@ -30,6 +32,16 @@ async function main() {
   console.log(address);
 
   await displayOwnedColors(address);
+
+  window.ethereum.on('accountsChanged', async function () {
+    signerTokens = [];
+    $('.color-token').remove();
+    signer = provider.getSigner();
+    address = await signer.getAddress();
+    console.log(address);
+
+    await displayOwnedColors(address);
+  })
 }
 
 // take in an address, display the owned colors
@@ -38,12 +50,10 @@ async function displayOwnedColors(_address) {
   balance = parseInt(balance);
   $("#address").text(address);
 
-  // stores an array of ints
+  // stores an array of numbers
   signerTokens = await getColorsByOwner(address, balance);
 
   let ownedColors = idsToColor(signerTokens);
-  console.log("Owned Color Tokens:");
-  console.log(ownedColors);
 
   // create HTML elements with the correct colors
   let tokenCounter = 0;
