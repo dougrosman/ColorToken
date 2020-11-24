@@ -22,9 +22,15 @@ const contract = new ethers.Contract(contractAddress, contractABI, provider);
 const tokenWithSigner = contract.connect(signer);
 
 main();
+
+// Event Listeners
 $('.send-modal__close').click(closeSendWindow)
 $('.send-modal__bg').click(closeSendWindow)
 $('.send-modal__btn').click(sendToken)
+$('#generate-color').click(async function(){
+  // generate color, initiate transaction to mint ownership of color
+  await mintColor();
+})
 
 
 async function main() {
@@ -94,10 +100,11 @@ async function displayOwnedColors(_address) {
     $(`#${colorId}`).children('.color-token__tile').css("background", `rgb(${t.r}, ${t.g}, ${t.b})`);
     $(`#${colorId}`).children('.color-token__text').children('.color-token__hex').text(`${rgbToHex(t.r, t.g, t.b)}`);
     
+    // increment the token counter
     tokenCounter++;
   }
   
-  // Display the send window after clicking on a color token.
+  // Display the send window after clicking on a color token. This click event needs to be inside the displayOwnedColors function because it depends on the existence of ".color-token" objects, which are created dynamically inside this function.
   $(".color-token").click(function(){
     let clickedToken = $(".color-token").index($(this));
     let clickedId = signerTokens[clickedToken];
@@ -219,51 +226,11 @@ function rgbToHex(r, g, b) {
   return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-// Load all pre-existing tokens into an array (existingTokens)
-// Note: this is a time consuming operation that takes longer depending on the amount of existing tokens, since the tokenByIndex() function can only retrieve one token at a time (asynchronously). Thus, this is only called once, after a user has clicked Generate Color. Once the existingTokens array has been loaded, no need to re-load it.
-async function loadExisting() {
-  
-  // get the total supply of existing tokens
-  totalSupply = await contract.totalSupply();
-  totalSupply = parseInt(totalSupply);
-
-  // loop through all existing tokens, storing their IDs in an array. This is so we can check later to make sure we don't generate an ID that already exists.
-  for(let i = 0; i < totalSupply; i++) {
-    let currToken = await contract.tokenByIndex(i);
-    existingTokens.push(parseInt(currToken));
-  }
-  return existingTokens;
-}
-
-// generates random colors until a unique (unowned) color is generated
-function checkExisting(_existingTokens) {
-
-  // generate a random color
-  let randomR = Math.floor(Math.random()*256)
-  let randomG = Math.floor(Math.random()*256)
-  let randomB = Math.floor(Math.random()*256)
-
-  let myColor = 1000000000 + randomR*1000000 + randomG*1000 + randomB;
-
-  while(_existingTokens.indexOf(myColor) > 0)
-  {
-    randomR = Math.floor(Math.random()*256)
-    randomG = Math.floor(Math.random()*256)
-    randomB = Math.floor(Math.random()*256)
-
-    myColor = 1000000000 + randomR*1000000 + randomG*1000 + randomB;
-  }
-  
-  console.log("unique color: " + myColor);
-
-  return myColor;
-}
-
-
+// Mint the unique color
 async function mintColor() {
 
   let timeOut;
-  var interval = 250;
+  let interval = 250;
   let cycle = true;
   $('#loading').show();
   $('#generate-color').hide();
@@ -304,17 +271,45 @@ async function mintColor() {
     tokenWithSigner.awardItem(address, rewardId);
   
   }, timeOut);
-  
 }
 
+// Load all pre-existing tokens into an array (existingTokens)
+// Note: this is a time consuming operation that takes longer depending on the amount of existing tokens, since the tokenByIndex() function can only retrieve one token at a time (asynchronously). Thus, this is only called once, after a user has clicked Generate Color. Once the existingTokens array has been loaded, no need to re-load it.
+async function loadExisting() {
+  
+  // get the total supply of existing tokens
+  totalSupply = await contract.totalSupply();
+  totalSupply = parseInt(totalSupply);
 
+  // loop through all existing tokens, storing their IDs in an array. This is so we can check later to make sure we don't generate an ID that already exists.
+  for(let i = 0; i < totalSupply; i++) {
+    let currToken = await contract.tokenByIndex(i);
+    existingTokens.push(parseInt(currToken));
+  }
+  return existingTokens;
+}
 
+// generates random colors until a unique (unowned) color is generated
+function checkExisting(_existingTokens) {
 
+  // generate an initial random color
+  let randomR = Math.floor(Math.random()*256)
+  let randomG = Math.floor(Math.random()*256)
+  let randomB = Math.floor(Math.random()*256)
 
+  // combine random RGB values into a single number
+  let myColor = 1000000000 + randomR*1000000 + randomG*1000 + randomB;
 
-let button = document.getElementById("generate-color")
+  // generate new random Colors until creating a new color
+  // a while loop is sort of like an if statement, except that it executes repeatedly until its condition is satisfied, unlike an if-statement, which only excecutes one time.
+  while(_existingTokens.indexOf(myColor) > 0)
+  {
+    randomR = Math.floor(Math.random()*256)
+    randomG = Math.floor(Math.random()*256)
+    randomB = Math.floor(Math.random()*256)
 
-button.addEventListener("click", async function(){
-  // generate color, initiate transaction to mint ownership of color
-  await mintColor();
-})
+    myColor = 1000000000 + randomR*1000000 + randomG*1000 + randomB;
+  }
+  console.log("Minted color: " + myColor);
+  return myColor;
+}
