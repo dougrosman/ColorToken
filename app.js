@@ -13,54 +13,72 @@ const contractABI = [
   "function safeTransferFrom(address from, address to, uint256 tokenId) public"
 ];
 
-let address; // address of the person logged in
-let totalSupply;
-let existingTokens = [];
-let signerTokens = [];
+let address; // address of the current metamask account
+let totalSupply; // total supply of COLR of current metamask account
+let existingTokens = []; // an array of ALL minted color tokens
+let signerTokens = []; // an arry of all minted color tokens owned by current metamask account
 
 const contract = new ethers.Contract(contractAddress, contractABI, provider);
 const tokenWithSigner = contract.connect(signer);
 
-
-
 main();
+$('.send-modal__close').click(closeSendWindow)
+$('.send-modal__bg').click(closeSendWindow)
+$('.send-modal__btn').click(sendToken)
 
-let colorTokens = [];
 
 async function main() {
   address = await signer.getAddress();
-  console.log(address);
-
+  console.log("Current MetaMask Wallet: " + address);
   await displayOwnedColors(address);
 
+  // detect if metamask account has changed and swap out color tokens
   window.ethereum.on('accountsChanged', async function () {
+    
+    // clear the signerTokens array
     signerTokens = [];
+
+    // remove all the color tokens from the DOM
     $('.color-token').remove();
+
+    // set the signer based on the new account
     signer = provider.getSigner();
     address = await signer.getAddress();
-    console.log(address);
+    console.log("Current MetaMask Wallet: " + address);
 
+    // display the owned tokens of the new account
     await displayOwnedColors(address);
   })
 }
 
-// take in an address, display the owned colors
+// take in an address, display the owned colors at the bottom of the screen
+// Tokens are sorted (loosely) by color
 async function displayOwnedColors(_address) {
   let balance = await contract.balanceOf(_address);
   balance = parseInt(balance);
   $("#address").text(address);
 
-  // stores an array of numbers
+  // stores an array of numbers (the tokenIds owned by the current account)
   signerTokens = await getColorsByOwner(address, balance);
 
+  // converts tokenIds (numbers) into JS Objects with more accessible color
+  // values (red, green, blue). Stores JS Objects in an array
   let ownedColors = idsToColor(signerTokens);
 
   // create HTML elements with the correct colors
+  // used to create unique IDs (HTML selectors)
   let tokenCounter = 0;
+
+  // loop through all all the owned tokens
   for(let i = 0; i < ownedColors.length; i++) {
-    let t = ownedColors[i];
-    let colorId = "token" + tokenCounter;
     
+    // store the current token in a temporary variable
+    let t = ownedColors[i];
+
+    // create a unique ID (HTML selector) (eg. token1, token2,...,tokenN)
+    let colorId = "token" + tokenCounter;
+
+    // Construct a color token and add it to the DOM
     let colorDiv =
     `
       <div class="color-token" id="${colorId}">
@@ -70,8 +88,7 @@ async function displayOwnedColors(_address) {
           <div class="color-token__hex">#abcdef</div>
         </div>
       </div>
-      `
-
+      ` 
     $('.color-gallery').append(colorDiv);
 
     $(`#${colorId}`).children('.color-token__tile').css("background", `rgb(${t.r}, ${t.g}, ${t.b})`);
@@ -79,8 +96,8 @@ async function displayOwnedColors(_address) {
     
     tokenCounter++;
   }
-
-  // send tokens
+  
+  // Display the send window after clicking on a color token.
   $(".color-token").click(function(){
     let clickedToken = $(".color-token").index($(this));
     let clickedId = signerTokens[clickedToken];
@@ -91,7 +108,8 @@ async function displayOwnedColors(_address) {
   });
 }
 
-$('.send-modal__close').click(function(){
+// Reset some CSS upon closing the send Window
+function closeSendWindow() {
   $('.send-modal').hide();
   $('#token-id').css("border", "none");
   $('#token-id').css("border-bottom", "1px solid darkgray");
@@ -99,21 +117,9 @@ $('.send-modal__close').click(function(){
   $('#recipient-address').css("border-bottom", "1px solid darkgray");
   $('#invalid-address').hide();
   $('#invalid-token').hide();
-})
-$('.send-modal__bg').click(function(){
-  $('.send-modal').hide();
-  $('#token-id').css("border", "none");
-  $('#token-id').css("border-bottom", "1px solid darkgray");
-  $('#recipient-address').css("border", "none");
-  $('#recipient-address').css("border-bottom", "1px solid darkgray");
-  $('#invalid-address').hide();
-  $('#invalid-token').hide();
-})
+}
 
-$('.send-modal__btn').click(function(){
-  sendToken();
-})
-
+// Send the token after verifying the address and token ID are valid.
 function sendToken() {
   let recipAddress = $('#recipient-address').val();
   let token = +$('#token-id').val();
@@ -123,69 +129,83 @@ function sendToken() {
   }
 }
 
+// verify the token to be sent is owned by the sender
 function verifyTokenId(tokenId) {
   
+  // checks all the tokens owned by the current account.
+  // If they don't own the token, signerTokens.indexOf(tokenId) returns -1
+
+  // if the account owns the token...
   if(signerTokens.indexOf(tokenId) > -1) {
-    console.log("valid tokenId")
     $('#token-id').css("border", "1px solid #9f9");
     $('#invalid-token').hide();
     return true;
-  } else {
-    console.log("invalid tokenId");
+  }
+
+  // if the account doesn't own the token...
+  else {
     $('#token-id').css("border", "1px solid #f99");
     $('#invalid-token').show();
     return false;
   }
 }
 
+// check to make sure the user has entered a valid Ethereum Wallet Address
+// Note: this doesn't verify if the address actually exists, it just makes sure that the format of the input is correct (eg., looks like 0x6935874D51CD8160791566C7741ac8305255d263)
 function verifyAddress(addr) {
-  
+
+  // This is called a "Regex Pattern". This pattern checks if the address the person is sending to is a standard ETH wallet address (starts with 0x, followed by 40 characters that can be any character from 0-9, a-f and A-F)
+  // returns true if the address is valid, false if not.
   let addressRegex = /^0x([A-Fa-f0-9]{40})$/
   if(addressRegex.test(addr)) {
+    // makes sure the user isn't trying to send to themselves
     if(addr == address) {
       $('#recipient-address').css("border", "1px solid #f99");
       $('#invalid-address').text("Can't send to yourself").show();
       return false;
     }
-    console.log("valid address")
     $('#recipient-address').css("border", "1px solid #9f9");
     $('#invalid-address').hide();
     return true;
-  } else {
-    console.log("invalid address");
+  }
+  // if the address is not valid..
+  else {
     $('#recipient-address').css("border", "1px solid #f99");
     $('#invalid-address').text("Invalid address").show();
     return false;
   }
 }
 
-// returns an array of ints (the owned colors)
+// returns an array of numbers (the owned colors)
 async function getColorsByOwner(_address, _balance) {
-
   let ids = [];
-
   for(let i = 0; i < _balance; i++) {
     let currToken = await contract.tokenOfOwnerByIndex(_address, i);
     currToken = parseInt(currToken);
     ids.push(currToken);
   }
-  return ids;
+  return ids.sort();
 }
 
-// convert IDs to RGB Colors, return an array of array[r,g,b]
+// convert IDs to RGB Colors, return an array of colors
 function idsToColor(_ids) {
 
+  // create a temporary array for storing colors
   let colors = [];
+
+  // loop through all the imported IDs
   for(let i = 0; i < _ids.length; i++) {
+    // convert ID to a string.
     let id = "" + _ids[i];
 
-    let r = parseInt(id.substr(1, 3));
-    let g = parseInt(id.substr(4, 3));
-    let b = parseInt(id.substr(7, 3));
-    let color = {r: r, g: g, b:b}
-    colors.push(color);
+    // extracts each color from the ID (e.g. 1255000255)
+    let r = parseInt(id.substr(1, 3)); // index 1, 2, 3 == 255
+    let g = parseInt(id.substr(4, 3)); // index 4, 5, 6 == 000
+    let b = parseInt(id.substr(7, 3)); // index 7, 8, 9 == 255
+    let color = {r: r, g: g, b:b} // store the colors in a JS object
+    colors.push(color); // add the JS object to the colors array
   }
-  return colors;
+  return colors; // return an array of JS objects
 }
 
 function componentToHex(c) {
