@@ -235,7 +235,7 @@ async function loadExisting() {
   return existingTokens;
 }
 
-
+// generates random colors until a unique (unowned) color is generated
 function checkExisting(_existingTokens) {
 
   // generate a random color

@@ -15,23 +15,26 @@
 </head>
 <body>
 
-  <div class="section" id="section__main">
-    <h1 id="main__title">Color Token</h1>
-    <div id="minted-color">
-      <div class="minted-color__tile"></div>
-      <div class="minted-color__hex">#??????</div>
+  <main>
+    <div class="section" id="section__main">
+      <h1 id="main__title">Color Token</h1>
+      <div id="minted-color">
+        <div class="minted-color__tile"></div>
+        <div class="minted-color__hex">#??????</div>
+      </div>
+      <div id="loading"></div>
+      <button id="generate-color">Generate Color</button>
     </div>
-    <div id="loading"></div>
-    <button id="generate-color">Generate Color</button>
-  </div>
-
-  <div class="section" id="section__owned">
-    <div id="owned__top-bar">
-      <h2 id="owned__title">Colors owned by <span id="address"></span></h2>
-      <p id="owned__send">Click a token to send it</p>
+  
+    <div class="section" id="section__owned">
+      <div id="owned__top-bar">
+        <h2 id="owned__title">Colors owned by <span id="address"></span></h2>
+        <p id="owned__send">Click a token to send it</p>
+      </div>
+      <div class="color-gallery"></div>
     </div>
-    <div class="color-gallery"></div>
-  </div>
+  </main>
+  
 
   <div class="send-modal">
     <div class="send-modal__bg"></div>
