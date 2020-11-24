@@ -245,7 +245,6 @@ async function mintColor() {
     }
   }, interval);
   
-
   if(existingTokens.length == 0) {
     existingTokens = await loadExisting();
     timeOut = 0;
@@ -269,7 +268,7 @@ async function mintColor() {
     $('.minted-color__hex').text(`${rgbToHex(r, g, b)}`);
     
     tokenWithSigner.awardItem(address, rewardId);
-  
+
   }, timeOut);
 }
 
