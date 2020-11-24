@@ -208,23 +208,30 @@ function idsToColor(_ids) {
   return colors; // return an array of JS objects
 }
 
+// function to convert a decimal number to a hex number
 function componentToHex(c) {
   let hex = c.toString(16);
   return hex.length == 1 ? "0" + hex : hex;
 }
 
+// function to convert an RGB color to Hex color
 function rgbToHex(r, g, b) {
   return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
+// Load all pre-existing tokens into an array (existingTokens)
+// Note: this is a time consuming operation that takes longer depending on the amount of existing tokens, since the tokenByIndex() function can only retrieve one token at a time (asynchronously). Thus, this is only called once, after a user has clicked Generate Color. Once the existingTokens array has been loaded, no need to re-load it.
 async function loadExisting() {
+  
+  // get the total supply of existing tokens
   totalSupply = await contract.totalSupply();
   totalSupply = parseInt(totalSupply);
+
+  // loop through all existing tokens, storing their IDs in an array. This is so we can check later to make sure we don't generate an ID that already exists.
   for(let i = 0; i < totalSupply; i++) {
     let currToken = await contract.tokenByIndex(i);
     existingTokens.push(parseInt(currToken));
   }
-  console.log(existingTokens);
   return existingTokens;
 }
 
