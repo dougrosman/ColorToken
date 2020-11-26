@@ -37,6 +37,7 @@ async function main() {
   address = await signer.getAddress();
   console.log("Current MetaMask Wallet: " + address);
   await displayOwnedColors(address);
+  $("#address").text(address);
 
   // detect if metamask account has changed and swap out color tokens
   window.ethereum.on('accountsChanged', async function () {
@@ -61,9 +62,8 @@ async function main() {
 // Tokens are sorted (loosely) by color
 async function displayOwnedColors(_address) {
   let balance = await contract.balanceOf(_address);
-  balance = parseInt(balance);
-  $("#address").text(address);
-
+  balance = +balance;
+  
   // stores an array of numbers (the tokenIds owned by the current account)
   signerTokens = await getColorsByOwner(address, balance);
 
@@ -71,18 +71,14 @@ async function displayOwnedColors(_address) {
   // values (red, green, blue). Stores JS Objects in an array
   let ownedColors = idsToColor(signerTokens);
 
-  // create HTML elements with the correct colors
-  // used to create unique IDs (HTML selectors)
-  let tokenCounter = 0;
-
-  // loop through all all the owned tokens
+    // loop through all all the owned tokens
   for(let i = 0; i < ownedColors.length; i++) {
     
     // store the current token in a temporary variable
     let t = ownedColors[i];
 
     // create a unique ID (HTML selector) (eg. token1, token2,...,tokenN)
-    let colorId = "token" + tokenCounter;
+    let colorId = "token" + i;
 
     // Construct a color token and add it to the DOM
     let colorDiv =
@@ -255,7 +251,7 @@ async function mintColor() {
   setTimeout(function(){
     cycle = false;
     $('#loading').hide();
-    $('#generate-color').css("display", "block");
+    $('#generate-color').show();
   
     let rewardId = checkExisting(existingTokens);
     let id = "" + rewardId;

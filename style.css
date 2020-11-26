@@ -88,16 +88,12 @@ main {
   height: 2vmin;
   font-weight: 500;
   margin: 2vmin auto;
-  display: none;
-  animation: loading 10s infinite ease;
-  color: hsl(0,100%,50%);
-
-  border: 3.9vmin solid rgba(0, 0, 0, 0);
-  border-left-color: rgba(255, 0, 255, 1);
-  border-right-color: rgba(255, 0, 255, 1);
-  border-top-color: rgba(255, 0, 255, 1);
+  border: 3.9vmin solid rgba(255, 0, 255, 1);
   border-bottom-color: rgba(0, 255, 255, 1);
   border-radius: 50%;
+
+  display: none;
+  animation: loading 10s infinite ease;
 }
 
 @keyframes loading {
