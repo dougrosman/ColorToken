@@ -95,9 +95,6 @@ async function displayOwnedColors(_address) {
 
     $(`#${colorId}`).children('.color-token__tile').css("background", `rgb(${t.r}, ${t.g}, ${t.b})`);
     $(`#${colorId}`).children('.color-token__text').children('.color-token__hex').text(`${rgbToHex(t.r, t.g, t.b)}`);
-    
-    // increment the token counter
-    tokenCounter++;
   }
   
   // Display the send window after clicking on a color token. This click event needs to be inside the displayOwnedColors function because it depends on the existence of ".color-token" objects, which are created dynamically inside this function.
